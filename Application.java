@@ -30,6 +30,7 @@ class Application implements Runnable{
 	@Override
 	public void run(){
 		try{
+			//Dumb me
 			while(true){
 				if(running){
 					//System.out.println(ticksPerSec);

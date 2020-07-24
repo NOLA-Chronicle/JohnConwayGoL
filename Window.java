@@ -4,9 +4,9 @@ import javax.swing.*;
 import javax.swing.event.*;
 
 class Window extends JFrame implements ActionListener, ChangeListener{
-	public final static int WIDTH = 605;
-	public final static int HEIGHT = 600 * 3 / 4;
-	private final String[] presets = {"Clear", "Small Spaceship", "Pulsar", "Glider Gun", "10 Cell Row"};
+	public final static int WIDTH = 1000;
+	public final static int HEIGHT = 750;
+	private final String[] presets = {"Clear", "Small Spaceship", "Pulsar", "Glider Gun", "10 Cell Row", "Random"};
 	private PaintCanvas drawingPanel;
 	private JPanel menuPanel;
 	private JComboBox presetDesigns;
@@ -125,6 +125,9 @@ class Window extends JFrame implements ActionListener, ChangeListener{
 					break;
 					case 4:
 						title = "tenCellRow";
+					break;
+					case 5:
+						title = "Random";
 					break;
 					default:
 					break;
