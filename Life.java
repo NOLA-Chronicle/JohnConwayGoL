@@ -10,6 +10,7 @@ class Life{
 	private static int columns;
 	private static int rows;
 	private static PaintCanvas canvas;
+	private static int generationCount = 0;
 
 	public Life(int width, int height){
 		columns = width / SQR_SIZE;
@@ -23,7 +24,11 @@ class Life{
 	public static void setCanvas(PaintCanvas myCanvas){
 		canvas = myCanvas;
 	}
-
+	
+	public static int getGeneration(){
+		return generationCount;
+	}
+	
 	private void initGrid(){
 		currentGrid = new boolean[columns][rows];
 		snapshotGrid = new boolean[columns][rows];
@@ -56,11 +61,31 @@ class Life{
 		}
 	}
 
+	public boolean checkCell(int c, int r){
+		try{
+			return currentGrid[c][r];
+		} catch (ArrayIndexOutOfBoundsException aioobe){
+			//ignore
+		} catch (Exception e){
+			e.printStackTrace();
+		}
+		return false;
+	}
+
 	public void toggleCell(int c, int r){
-		currentGrid[c][r] = !currentGrid[c][r];
+		try{
+			currentGrid[c][r] = !currentGrid[c][r];
+			generationCount = 0;
+		} catch (ArrayIndexOutOfBoundsException aioobe){
+			//ignore
+		} catch (Exception e){
+			e.printStackTrace();
+		}
 	}
 
 	public static void clearGrid(){
+		generationCount = 0;
+		
 		for(int i = 0; i < columns; i++){
 			for(int j = 0; j < rows; j++){
 				currentGrid[i][j] = false;
@@ -278,6 +303,10 @@ class Life{
 					}
 				}
 			}
+		}
+
+		if(!Arrays.deepEquals(currentGrid, snapshotGrid)){
+			generationCount++;
 		}
 
 		for(int i = 0; i < columns; i++){
