@@ -2,7 +2,7 @@ import java.awt.*;
 import javax.swing.*;
 
 class Application implements Runnable{
-	private static int ticksPerSec = 1;
+	private static int ticksPerSec = 50;
 	private static boolean running = false;
 
 	public static void main(String[] args) {
@@ -30,6 +30,7 @@ class Application implements Runnable{
 	@Override
 	public void run(){
 		try{
+			//Dumb me
 			while(true){
 				if(running){
 					//System.out.println(ticksPerSec);

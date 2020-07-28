@@ -4,18 +4,23 @@ import javax.swing.*;
 import javax.swing.event.*;
 
 class Window extends JFrame implements ActionListener, ChangeListener{
-	public final static int WIDTH = 605;
-	public final static int HEIGHT = 600 * 3 / 4;
-	private final String[] presets = {"Clear", "Small Spaceship", "Pulsar", "Glider Gun", "10 Cell Row"};
+	public final static int WIDTH = 955;
+	public final static int HEIGHT = 730;
+	private final String[] presets = {"Clear", "Small Spaceship", "Pulsar", "Glider Gun", "10 Cell Row", "Random"};
 	private PaintCanvas drawingPanel;
 	private JPanel menuPanel;
 	private JComboBox presetDesigns;
+	private JLabel speedSliderLabel;
 	private JSlider speedSlider;
 	private JButton toggleRunBtn;
 	private JButton stepBtn;
 	private JButton clearBtn;
+	public static JLabel generationCounter;
 
 	public Window(){
+		
+		int xPos = 0;
+		int yPos = 1;
 		setTitle("John Conway's Game of Life");
 
 		drawingPanel = new PaintCanvas(new Dimension(Window.WIDTH, (int)(Window.HEIGHT * .85)));
@@ -27,7 +32,7 @@ class Window extends JFrame implements ActionListener, ChangeListener{
 		presetDesigns = new JComboBox(presets);
 		presetDesigns.addActionListener(this);
 
-		speedSlider = new JSlider(1, 20, 5);
+		speedSlider = new JSlider(1, 100);
 		speedSlider.addChangeListener(this);
 
 		toggleRunBtn = new JButton("Start");
@@ -39,6 +44,9 @@ class Window extends JFrame implements ActionListener, ChangeListener{
 		clearBtn = new JButton("Clear");
 		clearBtn.addActionListener(this);
 
+		speedSliderLabel = new JLabel("Slow                                       Fast");
+		generationCounter = new JLabel("0");
+		
 		setLayout(new GridBagLayout());
 		GridBagConstraints layoutConst = new GridBagConstraints();
 
@@ -57,32 +65,42 @@ class Window extends JFrame implements ActionListener, ChangeListener{
 		add(menuPanel, layoutConst);
 
 		menuConst.insets = new Insets(5, 5, 5, 5);
-		menuConst.gridx = 0;
-		menuConst.gridy = 0;
+		menuConst.gridx = xPos;
+		menuConst.gridy = yPos;
 		menuPanel.add(presetDesigns, menuConst);
 
 		menuConst.insets = new Insets(5, 5, 5, 5);
-		menuConst.gridx = 1;
-		menuConst.gridy = 0;
+		menuConst.gridx = xPos+1;
+		menuConst.gridy = yPos-1;
+		menuPanel.add(speedSliderLabel, menuConst);
+
+		menuConst.insets = new Insets(5, 5, 5, 5);
+		menuConst.gridx = xPos+1;
+		menuConst.gridy = yPos;
 		menuPanel.add(speedSlider, menuConst);
 
 		menuConst.insets = new Insets(5, 5, 5, 5);
-		menuConst.gridx = 2;
-		menuConst.gridy = 0;
+		menuConst.gridx = xPos+2;
+		menuConst.gridy = yPos;
 		menuPanel.add(toggleRunBtn, menuConst);
 
 		menuConst.insets = new Insets(5, 5, 5, 5);
-		menuConst.gridx = 3;
-		menuConst.gridy = 0;
+		menuConst.gridx = xPos+3;
+		menuConst.gridy = yPos;
 		menuPanel.add(stepBtn, menuConst);
 
 		menuConst.insets = new Insets(5, 5, 5, 5);
-		menuConst.gridx = 4;
-		menuConst.gridy = 0;
+		menuConst.gridx = xPos+4;
+		menuConst.gridy = yPos;
 		menuPanel.add(clearBtn, menuConst);
 
+		menuConst.insets = new Insets(5, 5, 5, 5);
+		menuConst.gridx = xPos+5;
+		menuConst.gridy = yPos;
+		menuPanel.add(generationCounter, menuConst);
+		
 		validate();
-	}
+	} 
 
 	@Override
 	public void actionPerformed(ActionEvent e){
@@ -95,9 +113,10 @@ class Window extends JFrame implements ActionListener, ChangeListener{
 
 			if(srcButton == clearBtn){
 				presetDesigns.setSelectedIndex(0);
-			} else if(srcButton == stepBtn){
-				Life.step();
-				repaint();
+				if(toggleRunBtn.getText().equals("Stop")){
+					toggleRunBtn.setText("Start");
+					Application.toggleRunning();
+				}
 			} else if(srcButton == toggleRunBtn){
 				if(srcButton.getText().equals("Start")){
 					srcButton.setText("Stop");
@@ -105,6 +124,9 @@ class Window extends JFrame implements ActionListener, ChangeListener{
 					srcButton.setText("Start");
 				}
 				Application.toggleRunning();
+			} else if(srcButton == stepBtn){
+				Life.step();
+				// repaint();
 			}
 		} else {
 			title = "clear";
@@ -125,6 +147,9 @@ class Window extends JFrame implements ActionListener, ChangeListener{
 					break;
 					case 4:
 						title = "tenCellRow";
+					break;
+					case 5:
+						title = "Random";
 					break;
 					default:
 					break;
