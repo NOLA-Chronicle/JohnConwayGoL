@@ -3,10 +3,12 @@ import java.awt.*;
 import java.io.*;
 
 class Life{
+	private Timeline time;
 	private static String file = "gridPresets.txt";
-	public static final int SQR_SIZE = 15;
-	public static boolean[][] currentGrid;
-	public static boolean[][] snapshotGrid;
+	public static final int SQR_SIZE = 10;
+//	public static boolean[][] startingGrid;
+//	public static boolean[][] currentGrid;
+	private boolean[][] snapshotGrid;
 	private static int columns;
 	private static int rows;
 	private static PaintCanvas canvas;
@@ -18,19 +20,35 @@ class Life{
 
 		System.out.printf("%d x %d\n", columns, rows);
 
+		time = new Timeline(100, columns, rows);
 		initGrid();
+		
+	}
+ 
+	public void redoState(){
+		generationCount = 0;
+		
+		time.clearHistory();
+		time.addNextGen(time.getInitialGeneration());
+		
+//		for(int i = 0; i < columns; i++){
+//			for(int j = 0; j < rows; j++){
+//				currentGrid[i][j] = startingGrid[i][j];
+//			}
+//		}
 	}
 
-	public static void setCanvas(PaintCanvas myCanvas){
+	public void setCanvas(PaintCanvas myCanvas){
 		canvas = myCanvas;
 	}
 	
-	public static int getGeneration(){
+	public int getGenerationCount(){
 		return generationCount;
 	}
 	
 	private void initGrid(){
-		currentGrid = new boolean[columns][rows];
+//		startingGrid = new boolean[columns][rows];
+//		currentGrid = new boolean[columns][rows];
 		snapshotGrid = new boolean[columns][rows];
 
 		clearGrid();
@@ -38,22 +56,23 @@ class Life{
 
 	public void render(Graphics2D g){
 		//draw background grid
-		int width = currentGrid.length * SQR_SIZE;
-		int height = currentGrid[0].length * SQR_SIZE;
-
+		int width = columns * SQR_SIZE;
+		int height = rows * SQR_SIZE;
+		boolean[][] generation = time.getActiveGeneration();
+		
 		g.drawRect(0, 0, width, height);
 
-		for(int x = 0; x < currentGrid.length; x++){
+		for(int x = 0; x < columns; x++){
 			g.drawLine(x * SQR_SIZE, 0, x * SQR_SIZE, height);
 		}
 
-		for(int y = 0; y < currentGrid[0].length; y++){
+		for(int y = 0; y < rows; y++){
 			g.drawLine(0, y * SQR_SIZE, width, y * SQR_SIZE);
 		}
 
 		for(int i = 0; i < columns; i++){
 			for(int j = 0; j < rows; j++){
-				if(currentGrid[i][j]){
+				if(generation[i][j]){
 					g.setColor(Color.BLACK);
 					g.fillRect(i * SQR_SIZE, j * SQR_SIZE, SQR_SIZE, SQR_SIZE);
 				}
@@ -63,7 +82,7 @@ class Life{
 
 	public boolean checkCell(int c, int r){
 		try{
-			return currentGrid[c][r];
+			return time.getActiveGeneration()[c][r];
 		} catch (ArrayIndexOutOfBoundsException aioobe){
 			//ignore
 		} catch (Exception e){
@@ -73,9 +92,23 @@ class Life{
 	}
 
 	public void toggleCell(int c, int r){
+		boolean[][] generationInitial = time.getInitialGeneration();
+		boolean[][] generationCurrent = time.getActiveGeneration();
+		
+//		time.clearHistory();
+		
 		try{
-			currentGrid[c][r] = !currentGrid[c][r];
+			// startingGrid[c][r] = !startingGrid[c][r];
+			generationInitial[c][r] = !generationInitial[c][r];
+			
+			for(int col = 0; col < generationInitial.length; col++){
+				for(int row = 0; row < generationInitial[col].length; row++){
+					generationInitial[col][row] = generationCurrent[col][row];
+				}
+			}
 			generationCount = 0;
+			
+			time.clearHistory();
 		} catch (ArrayIndexOutOfBoundsException aioobe){
 			//ignore
 		} catch (Exception e){
@@ -83,30 +116,45 @@ class Life{
 		}
 	}
 
-	public static void clearGrid(){
+	public void clearGrid(){
 		generationCount = 0;
+		time.clearInitialState();
+		time.clearHistory();
 		
 		for(int i = 0; i < columns; i++){
 			for(int j = 0; j < rows; j++){
-				currentGrid[i][j] = false;
+//				currentGrid[i][j] = false;
 				snapshotGrid[i][j] = false;
+//				startingGrid[i][j] = false;
 			}
 		}
 	}
 
-	public static void presetDesign(String title) throws IOException{
+	public void previousState() {
+		if(time.moveToPrevGeneration()) {
+			generationCount--;
+		}
+	}
+	
+	public void presetDesign(String title) throws IOException{
 		FileInputStream inStream = null;
 		Scanner in = null;
 		Random rand = new Random();
-
+		boolean[][] generationInitial = time.getInitialGeneration();
+		
 		clearGrid();
 
 		if(title.equals("Random")){
-			for(int r = 0; r < currentGrid.length; r++){
-				for(int c = 0; c < currentGrid[0].length; c++){
-					currentGrid[r][c] = rand.nextBoolean();
+			for(int c = 0; c < columns; c++){
+				for(int r = 0; r < rows; r++){
+					boolean temp = rand.nextBoolean();
+//					startingGrid[c][r] = temp;
+//					currentGrid[c][r] = temp;
+					generationInitial[c][r] = temp;
 				}
 			}
+			time.clearHistory();
+			
 			return;
 		}
 
@@ -117,179 +165,194 @@ class Life{
 			while(in.hasNext()){
 				if(in.nextLine().equals(title)){
 					// System.out.println(in.nextByte() + " printed");
-					for(int r = 0; r < currentGrid[0].length; r++){
+					for(int r = 0; r < rows; r++){
 						String line = in.nextLine();
 						for(int c = 0; c < line.length(); c++){
 							if(line.charAt(c) == ';'){
 								return;
 							}
 							if(line.charAt(c) == '1'){
-								currentGrid[c][r] = true;
+								generationInitial[c][r] = true;
+							} else {
+								generationInitial[c][r] = false;
 							}
 						}
 					}
 				}
 			}
+			
+			time.clearHistory();
 		} catch(IOException e){
+			System.out.println(e);
 		}finally{
 			in.close();
 			inStream.close();
 		}
 	}
 
-	public static void step(){
+	private int getCellNeighbors(int c, int r){
+		boolean[][] generationCurrent = time.getActiveGeneration();
+		int neighbors = 0;
+		
+		if(c == 0){
+			if(generationCurrent[c+1][r])
+				neighbors++;
+			if(generationCurrent[columns-1][r])
+				neighbors++;
+		
+			if(r == 0){
+				if(generationCurrent[c+1][r+1])
+					neighbors++;
+				if(generationCurrent[c][r+1])
+					neighbors++;
+				if(generationCurrent[columns-1][r+1])
+					neighbors++;
+				if(generationCurrent[columns-1][rows-1])
+					neighbors++;
+				if(generationCurrent[c][rows-1])
+					neighbors++;
+				if(generationCurrent[c+1][rows-1])
+					neighbors++;
+			} else if(r == rows - 1){
+				if(generationCurrent[c+1][r-1])
+					neighbors++;
+				if(generationCurrent[c][r-1])
+					neighbors++;
+				if(generationCurrent[columns-1][r-1])
+					neighbors++;
+				if(generationCurrent[columns-1][0])
+					neighbors++;
+				if(generationCurrent[c][0])
+					neighbors++;
+				if(generationCurrent[c+1][0])
+					neighbors++;
+			} else {
+				if(generationCurrent[c][r-1])
+					neighbors++;
+				if(generationCurrent[c+1][r-1])
+					neighbors++;
+				if(generationCurrent[c+1][r+1])
+					neighbors++;
+				if(generationCurrent[c][r+1])
+					neighbors++;
+				if(generationCurrent[columns-1][r+1])
+					neighbors++;
+				if(generationCurrent[columns-1][r-1])
+					neighbors++;
+			}
+		} else if(c == columns - 1){
+			if(generationCurrent[c-1][r])
+				neighbors++;
+			if(generationCurrent[0][r])
+				neighbors++;
+			
+			if(r == 0){
+				if(generationCurrent[c-1][r+1])
+					neighbors++;
+				if(generationCurrent[c][r+1])
+					neighbors++;
+				if(generationCurrent[0][r+1])
+					neighbors++;
+				if(generationCurrent[0][rows-1])
+					neighbors++;
+				if(generationCurrent[c][rows-1])
+					neighbors++;
+				if(generationCurrent[c-1][rows-1])
+					neighbors++;
+			} else if(r == rows - 1){
+				if(generationCurrent[c-1][r-1])
+					neighbors++;
+				if(generationCurrent[c][r-1])
+					neighbors++;
+				if(generationCurrent[0][r-1])
+					neighbors++;
+				if(generationCurrent[0][0])
+					neighbors++;
+				if(generationCurrent[c][0])
+					neighbors++;
+				if(generationCurrent[c-1][0])
+					neighbors++;
+			} else {
+				if(generationCurrent[c][r-1])
+					neighbors++;
+				if(generationCurrent[c-1][r-1])
+					neighbors++;
+				if(generationCurrent[c-1][r+1])
+					neighbors++;
+				if(generationCurrent[c][r+1])
+					neighbors++;
+				if(generationCurrent[0][r+1])
+					neighbors++;
+				if(generationCurrent[0][r-1])
+					neighbors++;
+			}
+		} else if(r == 0){
+			if(generationCurrent[c-1][r])
+				neighbors++;
+			if(generationCurrent[c-1][r+1])
+				neighbors++;
+			if(generationCurrent[c][r+1])
+				neighbors++;
+			if(generationCurrent[c+1][r+1])
+				neighbors++;
+			if(generationCurrent[c+1][r])
+				neighbors++;
+			if(generationCurrent[c+1][rows-1])
+				neighbors++;
+			if(generationCurrent[c][rows-1])
+				neighbors++;
+			if(generationCurrent[c-1][rows-1])
+				neighbors++;
+		} else if(r == rows - 1){
+			if(generationCurrent[c-1][r])
+				neighbors++;
+			if(generationCurrent[c-1][r-1])
+				neighbors++;
+			if(generationCurrent[c][r-1])
+				neighbors++;
+			if(generationCurrent[c+1][r-1])
+				neighbors++;
+			if(generationCurrent[c+1][r])
+				neighbors++;
+			if(generationCurrent[c+1][0])
+				neighbors++;
+			if(generationCurrent[c][0])
+				neighbors++;
+			if(generationCurrent[c-1][0])
+				neighbors++;
+		} else {
+			if(generationCurrent[c][r-1])
+				neighbors++;
+			if(generationCurrent[c][r+1])
+				neighbors++;
+			if(generationCurrent[c-1][r])
+				neighbors++;
+			if(generationCurrent[c+1][r])
+				neighbors++;
+			if(generationCurrent[c+1][r-1])
+				neighbors++;
+			if(generationCurrent[c+1][r+1])
+				neighbors++;
+			if(generationCurrent[c-1][r+1])
+				neighbors++;
+			if(generationCurrent[c-1][r-1])
+				neighbors++;
+		}
+		
+		return neighbors;
+	}
+
+	public void step(){
+		boolean[][] generationCurrent = time.getActiveGeneration();
 		int neighbors = 0;
 
 		for(int c = 0; c < columns; c++){
 			for(int r = 0; r < rows; r++){
-				neighbors = 0;
-				if(c == 0){
-					if(currentGrid[c+1][r])
-						neighbors++;
-					if(currentGrid[columns-1][r])
-						neighbors++;
-					
-					if(r == 0){
-						if(currentGrid[c+1][r+1])
-							neighbors++;
-						if(currentGrid[c][r+1])
-							neighbors++;
-						if(currentGrid[columns-1][r+1])
-							neighbors++;
-						if(currentGrid[columns-1][rows-1])
-							neighbors++;
-						if(currentGrid[c][rows-1])
-							neighbors++;
-						if(currentGrid[c+1][rows-1])
-							neighbors++;
-					} else if(r == rows - 1){
-						if(currentGrid[c+1][r-1])
-							neighbors++;
-						if(currentGrid[c][r-1])
-							neighbors++;
-						if(currentGrid[columns-1][r-1])
-							neighbors++;
-						if(currentGrid[columns-1][0])
-							neighbors++;
-						if(currentGrid[c][0])
-							neighbors++;
-						if(currentGrid[c+1][0])
-							neighbors++;
-					} else {
-						if(currentGrid[c][r-1])
-							neighbors++;
-						if(currentGrid[c+1][r-1])
-							neighbors++;
-						if(currentGrid[c+1][r+1])
-							neighbors++;
-						if(currentGrid[c][r+1])
-							neighbors++;
-						if(currentGrid[columns-1][r+1])
-							neighbors++;
-						if(currentGrid[columns-1][r-1])
-							neighbors++;
-					}
-				} else if(c == columns - 1){
-					if(currentGrid[c-1][r])
-						neighbors++;
-					if(currentGrid[0][r])
-						neighbors++;
-					
-					if(r == 0){
-						if(currentGrid[c-1][r+1])
-							neighbors++;
-						if(currentGrid[c][r+1])
-							neighbors++;
-						if(currentGrid[0][r+1])
-							neighbors++;
-						if(currentGrid[0][rows-1])
-							neighbors++;
-						if(currentGrid[c][rows-1])
-							neighbors++;
-						if(currentGrid[c-1][rows-1])
-							neighbors++;
-					} else if(r == rows - 1){
-						if(currentGrid[c-1][r-1])
-							neighbors++;
-						if(currentGrid[c][r-1])
-							neighbors++;
-						if(currentGrid[0][r-1])
-							neighbors++;
-						if(currentGrid[0][0])
-							neighbors++;
-						if(currentGrid[c][0])
-							neighbors++;
-						if(currentGrid[c-1][0])
-							neighbors++;
-					} else {
-						if(currentGrid[c][r-1])
-							neighbors++;
-						if(currentGrid[c-1][r-1])
-							neighbors++;
-						if(currentGrid[c-1][r+1])
-							neighbors++;
-						if(currentGrid[c][r+1])
-							neighbors++;
-						if(currentGrid[0][r+1])
-							neighbors++;
-						if(currentGrid[0][r-1])
-							neighbors++;
-					}
-				} else if(r == 0){
-					if(currentGrid[c-1][r])
-						neighbors++;
-					if(currentGrid[c-1][r+1])
-						neighbors++;
-					if(currentGrid[c][r+1])
-						neighbors++;
-					if(currentGrid[c+1][r+1])
-						neighbors++;
-					if(currentGrid[c+1][r])
-						neighbors++;
-					if(currentGrid[c+1][rows-1])
-						neighbors++;
-					if(currentGrid[c][rows-1])
-						neighbors++;
-					if(currentGrid[c-1][rows-1])
-						neighbors++;
-				} else if(r == rows - 1){
-					if(currentGrid[c-1][r])
-						neighbors++;
-					if(currentGrid[c-1][r-1])
-						neighbors++;
-					if(currentGrid[c][r-1])
-						neighbors++;
-					if(currentGrid[c+1][r-1])
-						neighbors++;
-					if(currentGrid[c+1][r])
-						neighbors++;
-					if(currentGrid[c+1][0])
-						neighbors++;
-					if(currentGrid[c][0])
-						neighbors++;
-					if(currentGrid[c-1][0])
-						neighbors++;
-				} else {
-					if(currentGrid[c][r-1])
-						neighbors++;
-					if(currentGrid[c][r+1])
-						neighbors++;
-					if(currentGrid[c-1][r])
-						neighbors++;
-					if(currentGrid[c+1][r])
-						neighbors++;
-					if(currentGrid[c+1][r-1])
-						neighbors++;
-					if(currentGrid[c+1][r+1])
-						neighbors++;
-					if(currentGrid[c-1][r+1])
-						neighbors++;
-					if(currentGrid[c-1][r-1])
-						neighbors++;
-				}
+				
+				neighbors = getCellNeighbors(c, r);
 
 				//System.out.printf("\ncol %d row %d : has %d neighbors", c, r, neighbors);
-				if(currentGrid[c][r]){
+				if(generationCurrent[c][r]){
 					if(neighbors < 2 || neighbors > 3){
 						snapshotGrid[c][r] = false;
 					} else {
@@ -304,17 +367,29 @@ class Life{
 				}
 			}
 		}
-
-		if(!Arrays.deepEquals(currentGrid, snapshotGrid)){
+		
+		//for the generation counter
+		if(!Arrays.deepEquals(generationCurrent, snapshotGrid)){
 			generationCount++;
 		}
 
-		for(int i = 0; i < columns; i++){
-			for(int j = 0; j < rows; j++){
-				currentGrid[i][j] = snapshotGrid[i][j];
-			}
-		}
+		
+//		for(int i = 0; i < columns; i++){
+//			for(int j = 0; j < rows; j++){
+//				currentGrid[i][j] = snapshotGrid[i][j];
+//			}
+//		}
 
+		time.addNextGen(snapshotGrid);
+		
 		canvas.repaint();
+	}
+	
+	public int getNumColumns() {
+		return columns;
+	}
+	
+	public int getNumRows() {
+		return rows;
 	}
 }
