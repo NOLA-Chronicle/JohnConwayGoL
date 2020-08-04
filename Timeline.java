@@ -15,28 +15,42 @@ class Timeline {
 		
 		initState = new boolean[this.cols][this.rows];
 		history = new LinkedList<boolean[][]>();
+		history.addLast(initState);
 	}
 	
 	public boolean[][] getActiveGeneration(){
 		return history.peekLast();
 	}
 	
-	public void moveToPrevGeneration(){
-		history.removeLast();
+	public boolean[][] getInitialGeneration(){
+		return initState;
 	}
 	
-	public void addNextGen(boolean[][] nextGen){
-//		boolean[][] nextGen = new boolean[cols][rows];
-//		
-//		for(int c = 0; c < cols; c++) {
-//			for(int r = 0; r < rows; r++) {
-//				nextGen[c][r] = temp[c][r];
-//				
-//				if(history.size() == 0) {
-//					initState[c][r] = temp[c][r];
-//				}
-//			}
-//		}
+	public boolean moveToPrevGeneration(){
+		if(history.size() > 1) {
+			history.removeLast();
+			return true;
+		}
+		
+		return false;
+	}
+	
+	public void addNextGen(boolean[][] snapshotRef){
+		boolean[][] nextGen = new boolean[cols][rows];
+		
+		for(int c = 0; c < cols; c++) {
+			for(int r = 0; r < rows; r++) {
+				nextGen[c][r] = snapshotRef[c][r];
+				
+				if(history.size() == 0) {
+					initState[c][r] = snapshotRef[c][r];
+				}
+			}
+		}
+		
+		if(history.size() == 0) {
+			initState = nextGen;
+		}
 		
 		history.addLast(nextGen);
 	
@@ -47,5 +61,15 @@ class Timeline {
 	
 	public void clearHistory() {
 		history.clear();
+		
+		history.addLast(initState);
+	}
+	
+	public void clearInitialState() {
+		for(int c = 0; c < cols; c++) {
+			for(int r = 0; r < rows; r++) {
+				initState[c][r] = false;
+			}
+		}
 	}
 }

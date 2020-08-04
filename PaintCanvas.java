@@ -1,31 +1,44 @@
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
+
+import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
 
 class PaintCanvas extends JPanel implements MouseListener, MouseMotionListener{
+	private static final long serialVersionUID = 2035075294128405792L;
 	private Life life;
+	@SuppressWarnings("unused")
 	private int panelWidth;
+	@SuppressWarnings("unused")
 	private int panelHeight;
-	private Dimension canvasSize;
 	private Graphics2D g;
-	private boolean isDrawing = false;
-
-	public PaintCanvas(Dimension dim){
+	public GameLoop game;
+	
+	public PaintCanvas(Dimension dim, Life life){
 		super();
-		canvasSize = dim;
-		setPreferredSize(canvasSize);
+		setPreferredSize(dim);
 		setBackground(new Color(255, 255, 255));
 		addMouseListener(this);
 		addMouseMotionListener(this);
 
-		life = new Life((int)canvasSize.getWidth(), (int)canvasSize.getHeight());
-		Life.setCanvas(this);
+		this.life = life;
+		life.setCanvas(this);
+		
+		game = new GameLoop(life);
+		game.start();
 	}
-
+	
 	@Override
 	public void mouseClicked(MouseEvent e){
 		int col = e.getX() / Life.SQR_SIZE;
 		int row = e.getY() / Life.SQR_SIZE;
+		
+		// System.out.println(e.getX() + " x " + e.getY());
 		
 		life.toggleCell(col, row);
 		this.repaint();
@@ -62,8 +75,14 @@ class PaintCanvas extends JPanel implements MouseListener, MouseMotionListener{
 		int col = e.getX() / Life.SQR_SIZE;
 		int row = e.getY() / Life.SQR_SIZE;
 		
-		if(!life.checkCell(col, row)){
-			life.toggleCell(col, row);
+		if(SwingUtilities.isLeftMouseButton(e)) {
+			if(!life.checkCell(col, row)){
+				life.toggleCell(col, row);
+			}
+		} else if(SwingUtilities.isRightMouseButton(e)) {
+			if(life.checkCell(col, row)){
+				life.toggleCell(col, row);
+			}
 		}
 		
 		this.repaint();
@@ -79,6 +98,6 @@ class PaintCanvas extends JPanel implements MouseListener, MouseMotionListener{
 		
 		//g.drawRect(0, 0, panelWidth, panelHeight);
 		life.render(g);
-		Window.generationCounter.setText(Life.getGeneration() + "");
-	}	
+		Window.generationCounter.setText("Generation: " + life.getGenerationCount());
+	}
 }
