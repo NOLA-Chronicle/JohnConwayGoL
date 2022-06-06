@@ -3,30 +3,36 @@ import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.event.*;
 
-class Window extends JFrame implements ActionListener, ChangeListener {
+class Window extends JFrame implements ActionListener, ChangeListener, ItemListener {
 	public final static int WIDTH = 955;
 	public final static int HEIGHT = 730;
 	private Life life;
 	private final String[] presets = { "Clear", "Small Spaceship", "Pulsar", "Glider Gun", "10 Cell Row", "Random" };
 	private PaintCanvas drawingPanel;
 
-	private JPanel menuPanel;
+	//Panels to add JComponents to
+	private JPanel menuPanel;	//Includes all the panels for the bottom 
 	private JPanel presetPnl;
 	private JPanel speedPnl;
 	private JPanel controlPnl;
 	private JPanel analyzePnl;
-	
+
+	//JComponents of presetPnl
 	private JComboBox presetDesigns;
+	//JComponents of speedPnl
 	private JLabel speedSliderLabel;
 	private JSlider speedSlider;
+	public static JLabel generationCounter;
+	//JComponents of controlPnl
 	private JButton prevBtn;
 	private JButton toggleRunBtn;
 	private JButton stepBtn;
+	private JCheckBox wrapAroundCkbx;
+	//JComponents of analyzePnl
 	private JButton clearBtn;
 	private JButton binaryBtn;
 	private JButton redoStartingStateBtn;
 
-	public static JLabel generationCounter;
 
 	public Window() {
 
@@ -54,32 +60,40 @@ class Window extends JFrame implements ActionListener, ChangeListener {
 
 		
 		// Components
+		//presetPnl
 		presetDesigns = new JComboBox(presets);
 		presetDesigns.addActionListener(this);
-
+		
+		//speedPnl
 		speedSlider = new JSlider(1, 150, 25);
 		speedSlider.addChangeListener(this);
-
+		
+		speedSliderLabel = new JLabel("Slow                                                 Fast");
+		generationCounter = new JLabel("Generation: 0");
+		
+		//controlPnl
 		toggleRunBtn = new JButton("Start");
 		toggleRunBtn.addActionListener(this);
-
+		
 		stepBtn = new JButton("Next Gen");
 		stepBtn.addActionListener(this);
-
+		
 		prevBtn = new JButton("Prev Gen");
 		prevBtn.addActionListener(this);
+		
+		wrapAroundCkbx = new JCheckBox("Wrap-around", true);
+		wrapAroundCkbx.addItemListener(this);
 
+		//analyzePnl
 		clearBtn = new JButton("Clear");
 		clearBtn.addActionListener(this);
-
+		
 		binaryBtn = new JButton("Binary State");
 		binaryBtn.addActionListener(this);
 
 		redoStartingStateBtn = new JButton("Redo");
 		redoStartingStateBtn.addActionListener(this);
 
-		speedSliderLabel = new JLabel("Slow                                                 Fast");
-		generationCounter = new JLabel("Generation: 0");
 
 		//Window Layout
 		GroupLayout layout = new GroupLayout(this.getContentPane());
@@ -88,15 +102,15 @@ class Window extends JFrame implements ActionListener, ChangeListener {
 		layout.setAutoCreateContainerGaps(true);
 		layout.setHorizontalGroup(
 			layout.createSequentialGroup()
-				.addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-					.addComponent(drawingPanel)
-					.addComponent(menuPanel))
-		);
+			.addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+				.addComponent(drawingPanel)
+				.addComponent(menuPanel))
+			);
 		layout.setVerticalGroup(
 			layout.createSequentialGroup()
-				.addComponent(drawingPanel)
-				.addComponent(menuPanel)
-		);
+			.addComponent(drawingPanel)
+			.addComponent(menuPanel)
+			);
 		
 		//Set layout for sub-panels
 		GroupLayout menu = new GroupLayout(menuPanel);
@@ -105,19 +119,19 @@ class Window extends JFrame implements ActionListener, ChangeListener {
 		menu.setAutoCreateContainerGaps(true);
 		menu.setHorizontalGroup(
 			menu.createSequentialGroup()
+			.addComponent(presetPnl)
+			.addComponent(speedPnl)
+			.addComponent(controlPnl)
+			.addComponent(analyzePnl)
+			);
+		menu.setVerticalGroup(
+			menu.createSequentialGroup()
+			.addGroup(menu.createParallelGroup(GroupLayout.Alignment.BASELINE)
 				.addComponent(presetPnl)
 				.addComponent(speedPnl)
 				.addComponent(controlPnl)
-				.addComponent(analyzePnl)
-		);
-		menu.setVerticalGroup(
-			menu.createSequentialGroup()
-				.addGroup(menu.createParallelGroup(GroupLayout.Alignment.BASELINE)
-					.addComponent(presetPnl)
-					.addComponent(speedPnl)
-					.addComponent(controlPnl)
-					.addComponent(analyzePnl))
-		);
+				.addComponent(analyzePnl))
+			);
 		
 		//Set layout for preset panel
 		GroupLayout presetGroup = new GroupLayout(presetPnl);
@@ -126,12 +140,12 @@ class Window extends JFrame implements ActionListener, ChangeListener {
 		presetGroup.setAutoCreateContainerGaps(true);
 		presetGroup.setHorizontalGroup(
 			presetGroup.createSequentialGroup()
-				.addComponent(presetDesigns, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-		);
+			.addComponent(presetDesigns, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+			);
 		presetGroup.setVerticalGroup(
 			presetGroup.createSequentialGroup()
-				.addComponent(presetDesigns, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-		);
+			.addComponent(presetDesigns, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+			);
 		
 		//Set layout for speed panel
 		GroupLayout speedGroup = new GroupLayout(speedPnl);
@@ -140,17 +154,17 @@ class Window extends JFrame implements ActionListener, ChangeListener {
 		speedGroup.setAutoCreateContainerGaps(true);
 		speedGroup.setHorizontalGroup(
 			speedGroup.createSequentialGroup()
-				.addGroup(speedGroup.createParallelGroup(GroupLayout.Alignment.CENTER)
-					.addComponent(speedSliderLabel)
-					.addComponent(speedSlider)
-					.addComponent(generationCounter))
-		);
-		speedGroup.setVerticalGroup(
-			speedGroup.createSequentialGroup()
+			.addGroup(speedGroup.createParallelGroup(GroupLayout.Alignment.CENTER)
 				.addComponent(speedSliderLabel)
 				.addComponent(speedSlider)
-				.addComponent(generationCounter)
-		);
+				.addComponent(generationCounter))
+			);
+		speedGroup.setVerticalGroup(
+			speedGroup.createSequentialGroup()
+			.addComponent(speedSliderLabel)
+			.addComponent(speedSlider)
+			.addComponent(generationCounter)
+			);
 		
 		
 		//Set layout for control panel
@@ -160,17 +174,20 @@ class Window extends JFrame implements ActionListener, ChangeListener {
 		controlGroup.setAutoCreateContainerGaps(true);
 		controlGroup.setHorizontalGroup(
 			controlGroup.createSequentialGroup()
-				.addComponent(prevBtn)
-				.addComponent(toggleRunBtn)
-				.addComponent(stepBtn)
-		);
+			.addComponent(prevBtn)
+			.addGroup(controlGroup.createParallelGroup()
+				.addComponent(toggleRunBtn, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+				.addComponent(wrapAroundCkbx))
+			.addComponent(stepBtn)
+			);
 		controlGroup.setVerticalGroup(
 			controlGroup.createSequentialGroup()
-				.addGroup(controlGroup.createParallelGroup(GroupLayout.Alignment.BASELINE)
-					.addComponent(prevBtn)
-					.addComponent(toggleRunBtn)
-					.addComponent(stepBtn))
-		);
+			.addGroup(controlGroup.createParallelGroup(GroupLayout.Alignment.BASELINE)
+				.addComponent(prevBtn)
+				.addComponent(toggleRunBtn, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+				.addComponent(stepBtn))
+			.addComponent(wrapAroundCkbx)
+			);
 
 		//Set layout for analyze panel
 		GroupLayout analyzeGroup = new GroupLayout(analyzePnl);
@@ -180,16 +197,16 @@ class Window extends JFrame implements ActionListener, ChangeListener {
 		analyzeGroup.setHorizontalGroup(
 			analyzeGroup.createSequentialGroup()
 			.addGroup(analyzeGroup.createParallelGroup(GroupLayout.Alignment.CENTER)
-					.addComponent(clearBtn)
-					.addComponent(redoStartingStateBtn)
-					.addComponent(binaryBtn))
-		);
-		analyzeGroup.setVerticalGroup(
-			analyzeGroup.createSequentialGroup()
 				.addComponent(clearBtn)
 				.addComponent(redoStartingStateBtn)
-				.addComponent(binaryBtn)
-		);		
+				.addComponent(binaryBtn))
+			);
+		analyzeGroup.setVerticalGroup(
+			analyzeGroup.createSequentialGroup()
+			.addComponent(clearBtn)
+			.addComponent(redoStartingStateBtn)
+			.addComponent(binaryBtn)
+			);		
 
 		validate();
 	}
@@ -265,24 +282,24 @@ class Window extends JFrame implements ActionListener, ChangeListener {
 			try {
 				switch (srcCombo.getSelectedIndex()) {
 
-				case 0:
+					case 0:
 					break;
-				case 1:
+					case 1:
 					title = "smallSpaceship";
 					break;
-				case 2:
+					case 2:
 					title = "pulsar";
 					break;
-				case 3:
+					case 3:
 					title = "gliderGun";
 					break;
-				case 4:
+					case 4:
 					title = "tenCellRow";
 					break;
-				case 5:
+					case 5:
 					title = "Random";
 					break;
-				default:
+					default:
 					break;
 				}
 				life.presetDesign(title);
@@ -299,5 +316,21 @@ class Window extends JFrame implements ActionListener, ChangeListener {
 				drawingPanel.game.setTickSpeed(((JSlider) e.getSource()).getValue());
 			}
 		}
+	}
+
+	@Override
+	public void itemStateChanged(ItemEvent e){
+
+		//getting checked
+		if(e.getStateChange() == 1){
+			life.setWrapAround(true);
+				
+			//getting unchecked
+		} else {
+			life.setWrapAround(false);
+
+		}
+
+		life.setActiveGenAsInitialGen();
 	}
 }

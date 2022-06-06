@@ -5,14 +5,13 @@ import java.io.*;
 class Life{
 	private Timeline time;
 	private static String file = "gridPresets.txt";
-	public static final int SQR_SIZE = 10;
-//	public static boolean[][] startingGrid;
-//	public static boolean[][] currentGrid;
+	public static final int SQR_SIZE = 20;
 	private boolean[][] snapshotGrid;
 	private static int columns;
 	private static int rows;
 	private static PaintCanvas canvas;
 	private static int generationCount = 0;
+	private boolean wrapAround = true;
 
 	public Life(int width, int height){
 		columns = width / SQR_SIZE;
@@ -24,18 +23,21 @@ class Life{
 		initGrid();
 		
 	}
- 
+
+	public boolean isWrappingAround(){
+		return wrapAround;
+	}
+
+	public void setWrapAround(boolean toggle){
+		wrapAround = toggle;
+	}
+
 	public void redoState(){
 		generationCount = 0;
 		
 		time.clearHistory();
-		time.addNextGen(time.getInitialGeneration());
+		// time.addNextGen(time.getInitialGeneration());
 		
-//		for(int i = 0; i < columns; i++){
-//			for(int j = 0; j < rows; j++){
-//				currentGrid[i][j] = startingGrid[i][j];
-//			}
-//		}
 	}
 
 	public void setCanvas(PaintCanvas myCanvas){
@@ -47,8 +49,6 @@ class Life{
 	}
 	
 	private void initGrid(){
-//		startingGrid = new boolean[columns][rows];
-//		currentGrid = new boolean[columns][rows];
 		snapshotGrid = new boolean[columns][rows];
 
 		clearGrid();
@@ -93,27 +93,10 @@ class Life{
 
 	public void toggleCell(int c, int r){
 		boolean[][] generationInitial = time.getInitialGeneration();
-		boolean[][] generationCurrent = time.getActiveGeneration();
 		
-//		time.clearHistory();
-		
-		try{
-			// startingGrid[c][r] = !startingGrid[c][r];
-			generationInitial[c][r] = !generationInitial[c][r];
-			
-			for(int col = 0; col < generationInitial.length; col++){
-				for(int row = 0; row < generationInitial[col].length; row++){
-					generationInitial[col][row] = generationCurrent[col][row];
-				}
-			}
-			generationCount = 0;
-			
-			time.clearHistory();
-		} catch (ArrayIndexOutOfBoundsException aioobe){
-			//ignore
-		} catch (Exception e){
-			e.printStackTrace();
-		}
+		generationInitial[c][r] = !generationInitial[c][r];
+
+		setActiveGenAsInitialGen();
 	}
 
 	public void clearGrid(){
@@ -123,9 +106,7 @@ class Life{
 		
 		for(int i = 0; i < columns; i++){
 			for(int j = 0; j < rows; j++){
-//				currentGrid[i][j] = false;
 				snapshotGrid[i][j] = false;
-//				startingGrid[i][j] = false;
 			}
 		}
 	}
@@ -148,8 +129,7 @@ class Life{
 			for(int c = 0; c < columns; c++){
 				for(int r = 0; r < rows; r++){
 					boolean temp = rand.nextBoolean();
-//					startingGrid[c][r] = temp;
-//					currentGrid[c][r] = temp;
+
 					generationInitial[c][r] = temp;
 				}
 			}
@@ -164,7 +144,6 @@ class Life{
 
 			while(in.hasNext()){
 				if(in.nextLine().equals(title)){
-					// System.out.println(in.nextByte() + " printed");
 					for(int r = 0; r < rows; r++){
 						String line = in.nextLine();
 						for(int c = 0; c < line.length(); c++){
@@ -190,166 +169,129 @@ class Life{
 		}
 	}
 
-	private int getCellNeighbors(int c, int r){
+	private int getCellNeighbors(int c, int r, boolean wrap){
 		boolean[][] generationCurrent = time.getActiveGeneration();
+		
+		c = (c + getNumColumns());
+		r = (r + getNumRows());
+
+		int cPlus1 = (c + 1) % getNumColumns();
+		int cMinus1 = (c - 1) % getNumColumns();
+
+		int rPlus1 = (r + 1) % getNumRows();
+		int rMinus1 = (r - 1) % getNumRows();
+
+		c = c % getNumColumns();
+		r = r % getNumRows();
+
 		int neighbors = 0;
-		
-		if(c == 0){
-			if(generationCurrent[c+1][r])
-				neighbors++;
-			if(generationCurrent[columns-1][r])
-				neighbors++;
-		
-			if(r == 0){
-				if(generationCurrent[c+1][r+1])
-					neighbors++;
-				if(generationCurrent[c][r+1])
-					neighbors++;
-				if(generationCurrent[columns-1][r+1])
-					neighbors++;
-				if(generationCurrent[columns-1][rows-1])
-					neighbors++;
-				if(generationCurrent[c][rows-1])
-					neighbors++;
-				if(generationCurrent[c+1][rows-1])
-					neighbors++;
-			} else if(r == rows - 1){
-				if(generationCurrent[c+1][r-1])
-					neighbors++;
-				if(generationCurrent[c][r-1])
-					neighbors++;
-				if(generationCurrent[columns-1][r-1])
-					neighbors++;
-				if(generationCurrent[columns-1][0])
-					neighbors++;
-				if(generationCurrent[c][0])
-					neighbors++;
-				if(generationCurrent[c+1][0])
-					neighbors++;
-			} else {
-				if(generationCurrent[c][r-1])
-					neighbors++;
-				if(generationCurrent[c+1][r-1])
-					neighbors++;
-				if(generationCurrent[c+1][r+1])
-					neighbors++;
-				if(generationCurrent[c][r+1])
-					neighbors++;
-				if(generationCurrent[columns-1][r+1])
-					neighbors++;
-				if(generationCurrent[columns-1][r-1])
-					neighbors++;
-			}
-		} else if(c == columns - 1){
-			if(generationCurrent[c-1][r])
-				neighbors++;
-			if(generationCurrent[0][r])
-				neighbors++;
-			
-			if(r == 0){
-				if(generationCurrent[c-1][r+1])
-					neighbors++;
-				if(generationCurrent[c][r+1])
-					neighbors++;
-				if(generationCurrent[0][r+1])
-					neighbors++;
-				if(generationCurrent[0][rows-1])
-					neighbors++;
-				if(generationCurrent[c][rows-1])
-					neighbors++;
-				if(generationCurrent[c-1][rows-1])
-					neighbors++;
-			} else if(r == rows - 1){
-				if(generationCurrent[c-1][r-1])
-					neighbors++;
-				if(generationCurrent[c][r-1])
-					neighbors++;
-				if(generationCurrent[0][r-1])
-					neighbors++;
-				if(generationCurrent[0][0])
-					neighbors++;
-				if(generationCurrent[c][0])
-					neighbors++;
-				if(generationCurrent[c-1][0])
-					neighbors++;
-			} else {
-				if(generationCurrent[c][r-1])
-					neighbors++;
-				if(generationCurrent[c-1][r-1])
-					neighbors++;
-				if(generationCurrent[c-1][r+1])
-					neighbors++;
-				if(generationCurrent[c][r+1])
-					neighbors++;
-				if(generationCurrent[0][r+1])
-					neighbors++;
-				if(generationCurrent[0][r-1])
-					neighbors++;
-			}
-		} else if(r == 0){
-			if(generationCurrent[c-1][r])
-				neighbors++;
-			if(generationCurrent[c-1][r+1])
-				neighbors++;
-			if(generationCurrent[c][r+1])
-				neighbors++;
-			if(generationCurrent[c+1][r+1])
-				neighbors++;
-			if(generationCurrent[c+1][r])
-				neighbors++;
-			if(generationCurrent[c+1][rows-1])
-				neighbors++;
-			if(generationCurrent[c][rows-1])
-				neighbors++;
-			if(generationCurrent[c-1][rows-1])
-				neighbors++;
-		} else if(r == rows - 1){
-			if(generationCurrent[c-1][r])
-				neighbors++;
-			if(generationCurrent[c-1][r-1])
-				neighbors++;
-			if(generationCurrent[c][r-1])
-				neighbors++;
-			if(generationCurrent[c+1][r-1])
-				neighbors++;
-			if(generationCurrent[c+1][r])
-				neighbors++;
-			if(generationCurrent[c+1][0])
-				neighbors++;
-			if(generationCurrent[c][0])
-				neighbors++;
-			if(generationCurrent[c-1][0])
-				neighbors++;
+
+		//walls wrap-around
+		if(wrap){
+			if(generationCurrent[c][rMinus1]) neighbors++;			//check Top
+			if(generationCurrent[cPlus1][rMinus1]) neighbors++;		//check Top-R
+			if(generationCurrent[cPlus1][r]) neighbors++;			//check Right
+			if(generationCurrent[cPlus1][rPlus1]) neighbors++;		//check Bottom-R
+			if(generationCurrent[c][rPlus1]) neighbors++;			//check Bottom
+			if(generationCurrent[cMinus1][rPlus1]) neighbors++;		//check Bottom-L
+			if(generationCurrent[cMinus1][r]) neighbors++;			//check Left
+			if(generationCurrent[cMinus1][rMinus1]) neighbors++;	//check Top-L
+		//walls don't wrap-around
 		} else {
-			if(generationCurrent[c][r-1])
-				neighbors++;
-			if(generationCurrent[c][r+1])
-				neighbors++;
-			if(generationCurrent[c-1][r])
-				neighbors++;
-			if(generationCurrent[c+1][r])
-				neighbors++;
-			if(generationCurrent[c+1][r-1])
-				neighbors++;
-			if(generationCurrent[c+1][r+1])
-				neighbors++;
-			if(generationCurrent[c-1][r+1])
-				neighbors++;
-			if(generationCurrent[c-1][r-1])
-				neighbors++;
+			//if cell is on left wall
+			if(c % getNumColumns() == 0){
+				if(generationCurrent[cPlus1][r]) neighbors++;	//check right
+				
+				//if cell is on top wall
+				if(r % getNumRows() == 0){
+					if(generationCurrent[c][rPlus1]) neighbors++;		//check bottom
+					if(generationCurrent[cPlus1][rPlus1]) neighbors++;	//check bottom-R
+				//if cell is on bottom wall
+				} else if(r % getNumRows() == getNumRows() - 1){
+					if(generationCurrent[c][rMinus1]) neighbors++;		//check top
+					if(generationCurrent[cPlus1][rMinus1]) neighbors++;	//check top-R
+				//cell is somewhere between
+				} else {
+					if(generationCurrent[c][rMinus1]) neighbors++;		//check top
+					if(generationCurrent[c][rPlus1]) neighbors++;		//check bottom
+					if(generationCurrent[cPlus1][rMinus1]) neighbors++;	//check top-R
+					if(generationCurrent[cPlus1][rPlus1]) neighbors++;	//check bottom-R
+				}
+			//if cell is on right wall
+			} else if(c % getNumColumns() == getNumColumns() - 1){
+				if(generationCurrent[cMinus1][r]) neighbors++;	//check left
+
+				//if cell is on top wall
+				if(r % getNumRows() == 0){
+					if(generationCurrent[c][rPlus1]) neighbors++;		//check bottom
+					if(generationCurrent[cMinus1][rPlus1]) neighbors++;	//check bottom-L
+				//if cell is on bottom wall
+				} else if(r % getNumRows() == getNumRows() - 1){
+					if(generationCurrent[c][rMinus1]) neighbors++;		//check top
+					if(generationCurrent[cMinus1][rMinus1]) neighbors++;//check top-L
+				//cell is somewhere between
+				} else {
+					if(generationCurrent[c][rMinus1]) neighbors++;		//check top
+					if(generationCurrent[c][rPlus1]) neighbors++;		//check bottom
+					if(generationCurrent[cMinus1][rMinus1]) neighbors++;//check top-L
+					if(generationCurrent[cMinus1][rPlus1]) neighbors++;	//check bottom-L
+				}
+			//cell is somewhere between
+			} else {
+				if(generationCurrent[cMinus1][r]) neighbors++;	//check left
+				if(generationCurrent[cPlus1][r]) neighbors++;	//check right
+
+				//if cell is on top wall
+				if(r % getNumRows() == 0){
+					if(generationCurrent[c][rPlus1]) neighbors++;		//check bottom
+					if(generationCurrent[cMinus1][rPlus1]) neighbors++;	//check bottom-L
+					if(generationCurrent[cPlus1][rPlus1]) neighbors++;	//check bottom-R
+
+				//if cell is on bottom wall
+				} else if(r % getNumRows() == getNumRows() - 1){
+					if(generationCurrent[c][rMinus1]) neighbors++;		//check top
+					if(generationCurrent[cMinus1][rMinus1]) neighbors++;//check top-L
+					if(generationCurrent[cPlus1][rMinus1]) neighbors++;	//check top-R
+
+				//cell is somewhere between
+				} else {
+					if(generationCurrent[c][rMinus1]) neighbors++;		//check top
+					if(generationCurrent[cMinus1][rMinus1]) neighbors++;//check top-L
+					if(generationCurrent[cPlus1][rMinus1]) neighbors++;	//check top-R
+					if(generationCurrent[c][rPlus1]) neighbors++;		//check bottom
+					if(generationCurrent[cMinus1][rPlus1]) neighbors++;	//check bottom-L
+					if(generationCurrent[cPlus1][rPlus1]) neighbors++;	//check bottom-R
+
+				}
+			}
 		}
-		
+
 		return neighbors;
+	}
+
+	public void setActiveGenAsInitialGen(){
+		boolean[][] generationInitial = time.getInitialGeneration();
+		boolean[][] generationCurrent = time.getActiveGeneration();
+
+		for(int col = 0; col < generationCurrent.length; col++){
+			for(int row = 0; row < generationCurrent[col].length; row++){
+				generationInitial[col][row] = generationCurrent[col][row];
+			}
+		}
+		generationCount = 0;
+
+		time.clearHistory();
 	}
 
 	public void step(){
 		boolean[][] generationCurrent = time.getActiveGeneration();
 		int neighbors = 0;
+		boolean wrap = isWrappingAround();
 
 		for(int c = 0; c < columns; c++){
 			for(int r = 0; r < rows; r++){
 				
-				neighbors = getCellNeighbors(c, r);
+				neighbors = getCellNeighbors(c, r, wrap);
 
 				//System.out.printf("\ncol %d row %d : has %d neighbors", c, r, neighbors);
 				if(generationCurrent[c][r]){
@@ -372,13 +314,6 @@ class Life{
 		if(!Arrays.deepEquals(generationCurrent, snapshotGrid)){
 			generationCount++;
 		}
-
-		
-//		for(int i = 0; i < columns; i++){
-//			for(int j = 0; j < rows; j++){
-//				currentGrid[i][j] = snapshotGrid[i][j];
-//			}
-//		}
 
 		time.addNextGen(snapshotGrid);
 		
